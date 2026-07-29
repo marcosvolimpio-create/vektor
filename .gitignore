@@ -17,3 +17,8 @@ coverage
 .DS_Store
 
 .vscode/settings.json
+
+CLAUDE.local.md
+
+.turbo
+*.tsbuildinfo

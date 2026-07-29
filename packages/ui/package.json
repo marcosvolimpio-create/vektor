@@ -1,0 +1,32 @@
+{
+  "name": "@vektor/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./button": "./src/components/button.tsx",
+    "./input": "./src/components/input.tsx",
+    "./select": "./src/components/select.tsx",
+    "./textarea": "./src/components/textarea.tsx",
+    "./cn": "./src/lib/utils.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.6.0",
+    "lucide-react": "1.26.0"
+  },
+  "devDependencies": {
+    "@vektor/config": "workspace:*",
+    "@types/react": "19.2.17",
+    "shadcn": "4.15.0",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.8"
+  }
+}

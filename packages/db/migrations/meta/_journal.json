@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785090474770,
+      "tag": "0000_many_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785183723451,
+      "tag": "0001_members_catch_up",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785183761243,
+      "tag": "0002_members_prevent_self_promotion",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785183848986,
+      "tag": "0003_evidences_experiment_fk",
+      "breakpoints": true
+    }
+  ]
+}

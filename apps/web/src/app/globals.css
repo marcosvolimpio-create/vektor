@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@vektor/config/tailwind/shared.css";
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

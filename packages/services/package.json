@@ -1,0 +1,20 @@
+{
+  "name": "@vektor/services",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vektor/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@vektor/config": "workspace:*",
+    "typescript": "5.9.3"
+  }
+}

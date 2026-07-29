@@ -1,0 +1,22 @@
+{
+  "name": "@vektor/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.3",
+    "@supabase/supabase-js": "2.110.8"
+  },
+  "devDependencies": {
+    "@vektor/config": "workspace:*",
+    "@types/node": "24.13.3",
+    "typescript": "5.9.3"
+  }
+}
