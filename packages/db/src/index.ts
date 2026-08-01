@@ -18,3 +18,4 @@ export * from './repositories/hypotheses.repository';
 export * from './repositories/experiments.repository';
 export * from './repositories/learnings.repository';
 export * from './repositories/integrations.repository';
+export * from './repositories/execution-recommendations.repository';

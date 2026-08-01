@@ -14,3 +14,8 @@ export * from './configuracoes/configuracoes.service';
 export * from './execucao/execucao.service';
 export * from './growth/growth.service';
 export * from './aprendizado/aprendizado.service';
+export * from './execution-intelligence/execution-context';
+export * from './execution-intelligence/recommendation';
+export * from './execution-intelligence/ports';
+export * from './execution-intelligence/fake-execution-advisor';
+export * from './execution-intelligence/execution-intelligence.service';

@@ -5,6 +5,8 @@ import {
   ConfiguracoesService,
   EstrategiaService,
   ExecucaoService,
+  ExecutionIntelligenceService,
+  FakeExecutionAdvisor,
   GrowthService,
   WorkspaceService,
   resolveActorContext,
@@ -98,6 +100,19 @@ export function createAprendizadoService(dbClient: DbClient): AprendizadoService
  * — nunca abre ou busca uma conexão própria. `userId` vem sempre de
  * `getAuthenticatedUser()`, nunca de um parâmetro do cliente.
  */
+/**
+ * Sprint 4 — Execução Inteligente. `advisor` é injetado como instância única
+ * (mesmo padrão de `estrategiaService` em `createExecucaoService`, não uma
+ * fábrica por transação, já que não guarda estado nem depende de `DbClient`)
+ * — trocar por um provedor real de IA depois é 1 linha aqui, sem tocar
+ * `ExecutionIntelligenceService`.
+ */
+const executionAdvisor = new FakeExecutionAdvisor();
+
+export function createExecutionIntelligenceService(dbClient: DbClient): ExecutionIntelligenceService {
+  return new ExecutionIntelligenceService(dbClient, createEstrategiaService(dbClient), executionAdvisor);
+}
+
 export async function resolveRequestActorContext(
   tx: DbClient,
   userId: string,

@@ -79,6 +79,24 @@ export const experimentStatusEnum = pgEnum('experiment_status', [
 export const memberStatusEnum = pgEnum('member_status', ['convidado', 'ativo', 'removido']);
 export const memberRoleEnum = pgEnum('member_role', ['admin', 'membro']);
 
+// Sprint 4 — Execução Inteligente. Entidade nova, tratada como exceção
+// explícita e aprovada (não colide com nenhuma entidade existente).
+export const recommendationTypeEnum = pgEnum('recommendation_type', [
+  'acao_atrasada',
+  'campanha_sem_progresso',
+  'muitas_acoes_abertas',
+  'objetivo_sem_iniciativas',
+  'evidencia_negativa',
+  'kpi_abaixo_meta',
+]);
+export const recommendationPriorityEnum = pgEnum('recommendation_priority', ['baixa', 'media', 'alta']);
+export const recommendationStatusEnum = pgEnum('recommendation_status', [
+  'pendente',
+  'aceita',
+  'executada',
+  'descartada',
+]);
+
 // ---------------------------------------------------------------------------
 // workspaces — domain.md; ADR-003
 // ---------------------------------------------------------------------------
@@ -579,5 +597,57 @@ export const integrations = pgTable(
   },
   (table) => ({
     workspaceIdx: index('integrations_workspace_id_idx').on(table.workspaceId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// execution_recommendations — Sprint 4 (Execução Inteligente)
+//
+// Entidade nova, aprovada como exceção explícita: recomendações geradas por
+// um motor de análise (hoje um Fake Provider determinístico, preparado para
+// um provedor de IA real depois) precisam de um status rastreável entre
+// visitas (Pendente/Aceita/Executada/Descartada) — isso não é representável
+// em nenhuma tabela existente sem alterar o domínio já aprovado
+// (Campaigns/Tactics/Actions/Evidence/Objectives/Experiments permanecem
+// intocados). Nunca escreve nessas tabelas — só lê delas.
+// ---------------------------------------------------------------------------
+
+export const executionRecommendations = pgTable(
+  'execution_recommendations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    strategyId: uuid('strategy_id').notNull(),
+    type: recommendationTypeEnum('type').notNull(),
+    priority: recommendationPriorityEnum('priority').notNull(),
+    justification: text('justification').notNull(),
+    // Snapshot dos ids relevantes que originaram a recomendação (ex.: campaignId, actionId) — só leitura, nunca reidratado como FK.
+    context: jsonb('context').notNull(),
+    suggestedAction: text('suggested_action').notNull(),
+    status: recommendationStatusEnum('status').notNull().default('pendente'),
+    // Chave determinística (ex.: `acao_atrasada:{actionId}`) usada só para evitar recomendação duplicada enquanto `status = 'pendente'`.
+    dedupeKey: text('dedupe_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+  },
+  (table) => ({
+    strategyFk: foreignKey({
+      columns: [table.workspaceId, table.strategyId],
+      foreignColumns: [strategies.workspaceId, strategies.id],
+      name: 'execution_recommendations_strategy_id_fkey',
+    }).onDelete('cascade'),
+    workspaceIdIdUnique: unique('execution_recommendations_workspace_id_id_unique').on(
+      table.workspaceId,
+      table.id,
+    ),
+    workspaceIdx: index('execution_recommendations_workspace_id_idx').on(table.workspaceId),
+    strategyIdx: index('execution_recommendations_strategy_id_idx').on(table.strategyId),
+    statusIdx: index('execution_recommendations_status_idx').on(table.status),
+    // Impede duas recomendações pendentes com a mesma causa — permite recorrência depois de aceita/descartada.
+    pendingDedupeUnique: uniqueIndex('execution_recommendations_pending_dedupe_unique')
+      .on(table.workspaceId, table.dedupeKey)
+      .where(sql`${table.status} = 'pendente'`),
   }),
 );

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { obterEstrategiaAtivaAction } from '@/actions/estrategia.actions';
 import { DashboardActions } from '@/components/execucao/dashboard-actions';
 import { DashboardCampaigns } from '@/components/execucao/dashboard-campaigns';
@@ -58,6 +59,15 @@ export default async function ExecucaoPage({ params }: ExecucaoPageProps) {
         <h2 className="text-lg font-medium">Indicadores</h2>
         <DashboardCards workspaceId={workspaceId} />
       </section>
+
+      {estrategiaAtiva && (
+        <Link
+          href={`/w/${workspaceId}/execucao/recomendacoes`}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          Ver Recomendações →
+        </Link>
+      )}
 
       <DashboardCampaigns workspaceId={workspaceId} />
       <DashboardTactics workspaceId={workspaceId} />
