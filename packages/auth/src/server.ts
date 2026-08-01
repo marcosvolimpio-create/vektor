@@ -15,3 +15,37 @@ export function createSupabaseServerClient(cookies: CookieMethodsServer): Supaba
   }
   return createServerClient(url, anonKey, { cookies });
 }
+
+export interface EmailPasswordCredentials {
+  email: string;
+  password: string;
+}
+
+/** Sprint 2 (onboarding): autentica e propaga a sessão via o mesmo adaptador de cookies do chamador. */
+export async function signInWithPassword(
+  cookies: CookieMethodsServer,
+  credentials: EmailPasswordCredentials,
+): Promise<void> {
+  const supabase = createSupabaseServerClient(cookies);
+  const { error } = await supabase.auth.signInWithPassword(credentials);
+  if (error) {
+    throw new Error('Credenciais inválidas.');
+  }
+}
+
+/**
+ * Sprint 2 (onboarding): cria a conta. `sessionCreated` é `false` quando o
+ * projeto Supabase exige confirmação de e-mail antes de liberar sessão —
+ * o chamador decide o que exibir em cada caso.
+ */
+export async function signUpWithPassword(
+  cookies: CookieMethodsServer,
+  credentials: EmailPasswordCredentials,
+): Promise<{ sessionCreated: boolean }> {
+  const supabase = createSupabaseServerClient(cookies);
+  const { data, error } = await supabase.auth.signUp(credentials);
+  if (error) {
+    throw new Error('Não foi possível criar a conta.');
+  }
+  return { sessionCreated: data.session !== null };
+}

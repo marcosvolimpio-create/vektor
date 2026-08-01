@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * proteção por padrão. Nomes provisórios: `docs/implementation/frontend/routing.md`
  * ainda não decide a estrutura real de rotas (fora do escopo desta etapa).
  */
-const PUBLIC_PATHS = ['/login', '/auth/callback'];
+const PUBLIC_PATHS = ['/login', '/cadastro', '/auth/callback'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
