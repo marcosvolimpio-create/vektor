@@ -13,3 +13,4 @@ export * from './estrategia/step-dependencies';
 export * from './configuracoes/configuracoes.service';
 export * from './execucao/execucao.service';
 export * from './growth/growth.service';
+export * from './aprendizado/aprendizado.service';

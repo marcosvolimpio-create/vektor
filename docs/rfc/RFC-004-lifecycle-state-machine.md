@@ -1,11 +1,26 @@
 # RFC-004 — Lifecycle & State Machine
 
-**Status:** Aceita (2026-07-28 — estados de Ação, Hipótese e Experimento já implementados em `packages/db/src/schema.ts`, consistentes com esta RFC desde a Sprint de Hardening)
+**Status:** Implementado (2026-07-29 — ver seção "Implementação" abaixo)
 **Data:** 2026-07-26
 
 Esta RFC existe para resolver uma lacuna transversal identificada de forma independente na [RFC-002 — Execução](./RFC-002-execucao.md) (Ação sem máquina de estados) e na [RFC-003 — Growth](./RFC-003-growth.md) (Hipótese e Experimento sem máquina de estados; recomendação explícita de tratar isso como "preocupação transversal, não como parte de nenhuma RFC de módulo individual"). Esta é essa RFC.
 
 **Nota de aprovação (2026-07-28):** esta RFC foi formalmente aprovada. A seção "Revisão crítica" abaixo, incluindo a frase "A RFC permanece em Draft", é o registro histórico da autorrevisão feita antes da aprovação — mantida sem edição por fidelidade ao processo, não porque ainda reflita o status atual.
+
+# Implementação
+
+**Status: Implementado (2026-07-29).** Validado por Relatório de Convergência — verificação linha a linha de cada requisito desta RFC contra o código existente, sem nenhuma lacuna encontrada no que a RFC efetivamente se comprometeu a entregar.
+
+Todos os requisitos desta RFC — estados, transições, eventos e RBAC de Ação, Hipótese e Experimento — foram entregues como consequência direta da implementação de RFC-002 (Execução) e RFC-003 (Growth), não como um trabalho de implementação separado:
+
+- **Ação** (Proposta → Aprovada → Em execução → Concluída/Publicada): `ExecucaoService` (`packages/services/src/execucao/execucao.service.ts`) — `criarAcao`, `aprovarAcao`, `iniciarExecucaoAcao`, `concluirAcao`.
+- **Hipótese** (Registrada → Priorizada → Em teste → Validada/Refutada): `GrowthService` (`packages/services/src/growth/growth.service.ts`) — `registrarHipotese`, `priorizarHipotese`; a transição Priorizada → Em teste ocorre dentro de `aprovarExperimento`, e Em teste → Validada/Refutada dentro de `concluirExperimento`, exatamente como esta RFC descreve ("Experimento aprovado para rodar" / "Experimento confirma a Hipótese").
+- **Experimento** (Proposto → Aprovado → Em execução → Concluído): `GrowthService` — `proporExperimento`, `aprovarExperimento` (exige `role = 'admin'`, ADR-012), `iniciarExecucaoExperimento`, `concluirExperimento`.
+- **Campanha/Tática** (estado único "Ativa"): sem coluna de status em `packages/db/src/schema.ts` — como esta própria RFC define, essas duas entidades não têm máquina de estados própria.
+
+Enums correspondentes: `action_status`, `hypothesis_status`, `experiment_status` (`packages/db/src/schema.ts`).
+
+**Lacunas que esta RFC registra e que permanecem não resolvidas** (nunca fizeram parte do compromisso de entrega — ver "Revisão crítica" abaixo): estado final de Campanha/Tática; destino de uma entidade em andamento quando a Estratégia que a contém é encerrada; cancelamento, para qualquer uma das cinco entidades; automação de IA para concluir uma Ação. Continuam em aberto para Review futura e não bloqueiam este status de Implementado.
 
 # Objetivo
 

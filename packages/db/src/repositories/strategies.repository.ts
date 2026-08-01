@@ -1,10 +1,11 @@
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { eq, type InferInsertModel, type InferSelectModel } from 'drizzle-orm';
 import type { DbClient } from '../transaction';
 import { strategies } from '../schema';
 import { BaseRepository, type ListOptions, type PaginatedResult } from './base.repository';
 
 export type Strategy = InferSelectModel<typeof strategies>;
 export type NewStrategy = InferInsertModel<typeof strategies>;
+export type StrategyStatus = Strategy['status'];
 
 /**
  * RFC-001; ADR-003 (uma ativa por Workspace); ADR-004.
@@ -31,8 +32,19 @@ export class StrategiesRepository {
     return this.base.findByWorkspace(workspaceId, options);
   }
 
-  update(workspaceId: string, id: string, patch: Partial<NewStrategy>): Promise<Strategy | undefined> {
-    return this.base.update(workspaceId, id, patch);
+  /**
+   * `expectedStatus` habilita escrita condicional (RFC-005/`evoluirEstrategia`;
+   * ARCHITECTURE_RESOLUTION.md B5) — mesmo padrão de `ActionsRepository`/
+   * `HypothesesRepository`/`ExperimentsRepository`.
+   */
+  update(
+    workspaceId: string,
+    id: string,
+    patch: Partial<NewStrategy>,
+    expectedStatus?: StrategyStatus,
+  ): Promise<Strategy | undefined> {
+    const condition = expectedStatus ? eq(strategies.status, expectedStatus) : undefined;
+    return this.base.update(workspaceId, id, patch, condition);
   }
 
   count(workspaceId: string): Promise<number> {

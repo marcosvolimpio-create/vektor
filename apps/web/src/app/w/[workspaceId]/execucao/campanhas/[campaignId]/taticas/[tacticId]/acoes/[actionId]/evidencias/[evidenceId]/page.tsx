@@ -47,13 +47,23 @@ export default async function EvidenciaDetalhePage({ params }: EvidenciaDetalheP
         </div>
       </dl>
 
-      <Link
-        href={`/w/${workspaceId}/growth/hipoteses/nova?evidenceId=${evidencia.id}`}
-        className="block max-w-xs rounded-md border p-4 text-sm hover:bg-muted/50"
-      >
-        <span className="font-medium">Registrar Hipótese</span>
-        <p className="mt-1 text-muted-foreground">Growth: formar uma Hipótese a partir desta Evidência.</p>
-      </Link>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Link
+          href={`/w/${workspaceId}/growth/hipoteses/nova?evidenceId=${evidencia.id}`}
+          className="block max-w-xs rounded-md border p-4 text-sm hover:bg-muted/50"
+        >
+          <span className="font-medium">Registrar Hipótese</span>
+          <p className="mt-1 text-muted-foreground">Growth: formar uma Hipótese a partir desta Evidência.</p>
+        </Link>
+
+        <Link
+          href={`/w/${workspaceId}/aprendizado/nova?evidenceId=${evidencia.id}`}
+          className="block max-w-xs rounded-md border p-4 text-sm hover:bg-muted/50"
+        >
+          <span className="font-medium">Registrar Aprendizado</span>
+          <p className="mt-1 text-muted-foreground">Aprendizado: registrar conhecimento a partir desta Evidência.</p>
+        </Link>
+      </div>
     </div>
   );
 }

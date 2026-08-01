@@ -14,7 +14,7 @@
  * contrato — nenhuma mudança é esperada nos Services que o consomem.
  */
 
-import type { DbClient, ListOptions, PaginatedResult } from '@vektor/db';
+import type { DbClient, ListOptions, PaginatedResult, Strategy } from '@vektor/db';
 
 export type MemberRole = 'admin' | 'membro';
 export type MemberStatus = 'convidado' | 'ativo' | 'removido';
@@ -75,3 +75,30 @@ export interface MembersRepositoryPort {
  * `(db) => new MembersRepository(db)`.
  */
 export type MembersRepositoryFactory = (db: DbClient) => MembersRepositoryPort;
+
+/**
+ * Port para a capacidade de evolução de Estratégia que `AprendizadoService`
+ * precisa (ADR-002: "Evoluir Estratégia" é uma ação de Aprendizado, mas as
+ * únicas escritas em `strategies` continuam pertencendo a `EstrategiaService`
+ * — nenhum outro Service deve escrever nessa tabela diretamente).
+ *
+ * Mesmo padrão de `MembersRepositoryPort`/`MembersRepositoryFactory`: em vez
+ * de `AprendizadoService` receber a classe concreta `EstrategiaService` no
+ * construtor (dependência direta entre Services), ele recebe só a fatia de
+ * capacidade de que precisa, como interface. Em runtime, `EstrategiaService`
+ * já satisfaz esta interface estruturalmente — nenhum adaptador é necessário.
+ */
+export interface EstrategiaEvolucaoPort {
+  encerrarEstrategia(actor: { workspaceId: string }, strategyId: string): Promise<Strategy>;
+  iniciarFormulacao(
+    actor: { workspaceId: string },
+    input: { evolvedFromStrategyId?: string },
+  ): Promise<Strategy>;
+}
+
+/**
+ * Fábrica de `EstrategiaEvolucaoPort` a partir de um `DbClient` — mesma forma
+ * de `MembersRepositoryFactory`, para que `AprendizadoService` consiga
+ * recompor a capacidade contra a transação (`tx`) de `evoluirEstrategia`.
+ */
+export type EstrategiaEvolucaoFactory = (db: DbClient) => EstrategiaEvolucaoPort;

@@ -17,6 +17,7 @@ import {
   EtapaForaDeOrdemError,
   EtapaSemConteudoError,
   NaoEncontradoError,
+  TransicaoConcorrenteError,
 } from '../shared/errors';
 import type { MembersRepositoryFactory } from '../shared/ports';
 import { STEP_DEPENDENCIES, type StepType } from './step-dependencies';
@@ -254,6 +255,37 @@ export class EstrategiaService {
     dbClient: DbClient = this.db,
   ): Promise<Strategy> {
     return this.obterEstrategiaAtivaObrigatoria(actor, strategyId, dbClient);
+  }
+
+  /**
+   * ADR-002/ADR-004; RFC-005 ("Evoluir Estratégia"): fecha a Estratégia
+   * ativa — única escrita de `status: 'encerrada'` em todo o projeto.
+   * Nenhum outro Service escreve em `strategies` diretamente; `AprendizadoService`
+   * chama este método através de `EstrategiaEvolucaoPort` (`shared/ports.ts`),
+   * nunca importando `EstrategiaService` concretamente.
+   *
+   * Reaproveita `garantirEstrategiaAtiva` como pré-condição — não duplica a
+   * checagem de "existe e está ativa". Escrita condicional (`expectedStatus:
+   * 'ativa'`) contra corrida com outra chamada concorrente (mesmo padrão B5
+   * de `Actions`/`Hypotheses`/`Experiments`Repository).
+   */
+  async encerrarEstrategia(
+    actor: Pick<ActorContext, 'workspaceId'>,
+    strategyId: string,
+    dbClient: DbClient = this.db,
+  ): Promise<Strategy> {
+    await this.garantirEstrategiaAtiva(actor, strategyId, dbClient);
+    const strategiesRepository = new StrategiesRepository(dbClient);
+    const encerrada = await strategiesRepository.update(
+      actor.workspaceId,
+      strategyId,
+      { status: 'encerrada', closedAt: new Date() },
+      'ativa',
+    );
+    if (!encerrada) {
+      throw new TransicaoConcorrenteError('Estratégia', strategyId);
+    }
+    return encerrada;
   }
 
   private async buscarAtivaInterno(

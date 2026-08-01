@@ -1,5 +1,6 @@
+import type { DbClient } from '@vektor/db';
 import { AcessoNegadoError, AutorizacaoInsuficienteError } from './errors';
-import type { MemberRole, MembersRepositoryPort } from './ports';
+import type { MemberRole, MembersRepositoryFactory, MembersRepositoryPort } from './ports';
 
 /**
  * Contexto autenticado que toda Server Action deve resolver, conforme
@@ -58,6 +59,31 @@ export async function listActiveMemberships(
 /** ADR-012: lança `AutorizacaoInsuficienteError` se o ator não for `admin`. */
 export function assertAdmin(actor: ActorContext, operation: string): void {
   if (actor.role !== 'admin') {
+    throw new AutorizacaoInsuficienteError(operation, 'admin');
+  }
+}
+
+/**
+ * ADR-014/A4: revalida `actor.memberId` contra a linha real de `members`
+ * dentro da mesma transação da escrita — nunca confia apenas no `role` que
+ * chegou em `ActorContext`, mesmo já tendo passado por `assertAdmin`.
+ *
+ * Débito arquitetural conhecido, registrado e não ampliado aqui:
+ * `EstrategiaService` e `GrowthService` já têm cada um sua própria versão
+ * privada e idêntica desta função (backlog: extrair as duas para cá). Esta
+ * função existe para que `AprendizadoService` (RFC-005) reutilize um
+ * mecanismo em vez de introduzir uma terceira cópia — não consolida as duas
+ * já existentes, o que está fora do escopo desta RFC.
+ */
+export async function assertAindaAdmin(
+  actor: ActorContext,
+  membersRepositoryFactory: MembersRepositoryFactory,
+  dbClient: DbClient,
+  operation: string,
+): Promise<void> {
+  const membersRepository = membersRepositoryFactory(dbClient);
+  const membro = await membersRepository.findById(actor.workspaceId, actor.memberId);
+  if (!membro || membro.status !== 'ativo' || membro.role !== 'admin') {
     throw new AutorizacaoInsuficienteError(operation, 'admin');
   }
 }

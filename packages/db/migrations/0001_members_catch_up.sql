@@ -1,9 +1,7 @@
+-- auth.users é uma tabela gerenciada pelo Supabase Auth e não deve ser
+-- criada pelas migrations do domínio.
 CREATE TYPE "public"."member_role" AS ENUM('admin', 'membro');--> statement-breakpoint
 CREATE TYPE "public"."member_status" AS ENUM('convidado', 'ativo', 'removido');--> statement-breakpoint
-CREATE TABLE "auth"."users" (
-	"id" uuid PRIMARY KEY NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "members" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"workspace_id" uuid NOT NULL,

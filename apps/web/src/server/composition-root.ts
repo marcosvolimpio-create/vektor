@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { MembersRepository, type DbClient } from '@vektor/db';
 import {
+  AprendizadoService,
   ConfiguracoesService,
   EstrategiaService,
   ExecucaoService,
@@ -8,6 +9,7 @@ import {
   WorkspaceService,
   resolveActorContext,
   type ActorContext,
+  type EstrategiaEvolucaoFactory,
   type MembersRepositoryFactory,
 } from '@vektor/services';
 import { getDb } from './db';
@@ -72,6 +74,23 @@ export function createExecucaoService(dbClient: DbClient): ExecucaoService {
  */
 export function createGrowthService(dbClient: DbClient): GrowthService {
   return new GrowthService(dbClient, createEstrategiaService(dbClient), membersRepositoryFactory);
+}
+
+/**
+ * `EstrategiaService` já satisfaz `EstrategiaEvolucaoPort` estruturalmente —
+ * nenhum adaptador é necessário. `AprendizadoService` nunca importa
+ * `EstrategiaService` concretamente, só este tipo de fábrica (mesmo padrão
+ * de `membersRepositoryFactory`).
+ */
+const estrategiaEvolucaoFactory: EstrategiaEvolucaoFactory = (db: DbClient) => createEstrategiaService(db);
+
+/**
+ * `AprendizadoService` recebe `membersRepositoryFactory` porque
+ * `evoluirEstrategia` é admin-gated (ADR-012) — mesmo motivo de
+ * `GrowthService`/`ConfiguracoesService`.
+ */
+export function createAprendizadoService(dbClient: DbClient): AprendizadoService {
+  return new AprendizadoService(dbClient, estrategiaEvolucaoFactory, membersRepositoryFactory);
 }
 
 /**
