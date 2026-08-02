@@ -29,6 +29,13 @@ Referida abaixo como **[isolamento]**: o `workspace_id` da linha precisa estar e
 | `experiments` | select/insert/update | [isolamento] | `update` necessário para transição de `status`; **a política não decide quem pode setar `approved_by`** — isso é regra de aplicação (Membro com `role = 'admin'`, ADR-012), verificada na camada Service, não pela política de isolamento de tenant |
 | `learnings` | select/insert | [isolamento] | sem `update`/`delete` — append-only |
 | `integrations` | select/insert/update/delete | [isolamento] | única tabela com `delete` documentável — remover uma integração é uma operação razoável e sem contraindicação em nenhuma fonte |
+| `execution_recommendations` | select/insert/update | [isolamento] | Sprint 4 (Execução Inteligente) — entidade posterior a esta versão do documento, adicionada aqui na implementação (Sprint 5). Mesmo padrão de `actions`/`hypotheses`/`experiments`: `update` necessário para a transição de status (Pendente → Aceita/Executada/Descartada). Sem `delete` — `ExecutionRecommendationsRepository` não expõe esse método. |
+
+## Implementação (Sprint 5)
+
+**Status: Implementado.** `packages/db/migrations/0005_enable_rls_policies.sql` habilita RLS e cria as políticas acima para as 13 tabelas, usando uma função `security definer` (`public.is_workspace_member`) para resolver a condição **[isolamento]** sem a recursão que motivou A7 (`ARCHITECTURE_RESOLUTION.md`). Toda política é escopada `to authenticated`, consistente com ADR-014 (toda Server Action executa com `role = authenticated`).
+
+**Caso de contorno tratado explicitamente — fundação self-service de Workspace (ADR-013):** no instante em que um usuário cria seu primeiro Workspace, ele ainda não é `member` dele — a política `members_insert` libera essa única inserção quando `user_id = auth.uid()` **e** nenhum Membro ainda existe para aquele `workspace_id` (bootstrap), além do caminho normal de convite (`is_workspace_member(workspace_id)`, para um admin já ativo convidando outra pessoa).
 
 ## Por que RLS não substitui `backend/validation.md`
 

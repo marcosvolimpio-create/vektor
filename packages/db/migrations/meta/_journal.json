@@ -36,6 +36,13 @@
       "when": 1785623871867,
       "tag": "0004_illegal_darwin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785629081868,
+      "tag": "0005_enable_rls_policies",
+      "breakpoints": true
     }
   ]
 }
