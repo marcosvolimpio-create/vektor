@@ -177,6 +177,52 @@
     companies=data||[];companyById=Object.fromEntries(companies.map(x=>[x.id,/aloe/i.test(x.name)?"Aloe":/nagel/i.test(x.name)?"Nagel":x.name]));
     if(!companies.length){$('login-error').textContent="Esta conta não tem acesso a nenhuma clínica.";return}
     $('company').innerHTML=companies.map(c=>'<option value="'+escape(companyById[c.id])+'">'+escape(c.name)+'</option>').join('');
+    window.ATENDE_LEAD_WORKSPACE?.setBackend({
+      getConversation:async lead=>{
+        const id=chosenCompany();
+        if(!id||companyById[id]!==lead.company)return null;
+        const {data,error}=await db.from("conversations").select("*")
+          .eq("company_id",id).eq("lead_id",lead.id)
+          .order("created_at",{ascending:false}).limit(1).maybeSingle();
+        if(error)throw error;
+        return data?{...data,company:lead.company,contact_label:data.contact_label||lead.name}:null;
+      },
+      loadMessages:async conversationId=>{
+        const id=chosenCompany();if(!id)throw Error("Selecione uma clínica.");
+        const {data,error}=await db.from("messages").select("*")
+          .eq("company_id",id).eq("conversation_id",conversationId)
+          .order("sent_at",{ascending:true});
+        if(error)throw error;
+        return data||[];
+      },
+      sendText:async (conversation_id,text)=>{
+        if(!chosenCompany())throw Error("Selecione uma clínica.");
+        const {data,error}=await db.functions.invoke("send-message",{body:{conversation_id,text}});
+        if(error)throw error;
+        if(data?.error)throw Error(data.error);
+      },
+      rewrite:async (text,mode)=>{
+        const id=chosenCompany();if(!id)throw Error("Selecione uma clínica.");
+        const {data,error}=await db.functions.invoke("rewrite-message",{body:{company_id:id,text,mode}});
+        if(error)throw error;
+        if(data?.error)throw Error(data.error);
+        return data?.text;
+      },
+      summarize:async lead=>{
+        const id=chosenCompany();if(!id||companyById[id]!==lead.company)throw Error("Lead fora da clínica selecionada.");
+        // Enviar apenas IDs; a Edge Function autenticada deve consultar TODO o histórico
+        // com RLS, limitar contexto, jamais enviar respostas automaticamente e auditar acesso.
+        const {data,error}=await db.functions.invoke("summarize-lead-history",{
+          body:{company_id:id,lead_id:lead.id}
+        });
+        if(error)throw error;
+        if(data?.error)throw Error(data.error);
+        if(!data||typeof data!=="object")throw Error("Resumo indisponível.");
+        return data;
+      }
+      // sendAudio e sendFiles só serão habilitados quando o backend suportar
+      // armazenamento privado, uploads retomáveis e limites de cada canal.
+    });
     window.ATENDE_ATTRIBUTION?.connect(db,chosenCompany,companies);
     window.ATENDE_ATTRIBUTION?.setRefresher(loadData);
     $('company').onchange=()=>{activeConversation=null;loadData().catch(alertError)};
