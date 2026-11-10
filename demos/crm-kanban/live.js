@@ -179,6 +179,7 @@
   let messengerView=null;
   function renderInbox(){
     const company_id=chosenCompany();
+    const canSupervise=memberRoles[company_id]&&["admin","manager","supervisor"].includes(memberRoles[company_id]);
     const list=conversations.filter(c=>c.company_id===company_id).map(c=>({
       ...c,
       company: companyById[c.company_id]||"",
@@ -187,6 +188,24 @@
     }));
     const messaging={
       conversations:list,
+      attendants:canSupervise?(window.ATENDE_ATTENDANTS?.[company_id]||[]):[],
+      openLead:lead_id=>{
+        const lead=rows.find(r=>String(r.id)===String(lead_id)&&r.company===(companyById[company_id]||""));
+        if(!lead)throw Error("Lead não encontrado nesta clínica.");
+        if(!window.ATENDE_LEAD_WORKSPACE)throw Error("Ficha 360° ainda indisponível.");
+        return window.ATENDE_LEAD_WORKSPACE.open(lead);
+      },
+      transferConversation:canSupervise?async(conversation_id,assignedTo)=>{
+        const record=conversations.find(x=>x.id===conversation_id&&x.company_id===company_id);
+        if(!record)throw Error("Conversa fora da clínica selecionada.");
+        const {data,error}=await db.rpc("assign_conversation",{
+          p_conversation:conversation_id,p_new_assignee:assignedTo||null
+        });
+        if(error)throw error;
+        if(!data?.id||data.company_id!==company_id)throw Error("A transferência não foi confirmada.");
+        conversations=conversations.map(x=>x.id===conversation_id?{...x,...data}:x);
+        return data;
+      }:undefined,
       claimConversation:async conversation_id=>{
         const clinic_id=chosenCompany();
         if(!clinic_id)throw Error("Selecione uma clínica.");
@@ -246,6 +265,28 @@
     ]);
     for(const res of [l,a,p,c])if(res.error)throw res.error;
     activities=a.data||[];appointments=p.data||[];conversations=c.data||[];
+    // Prioridade é baseada no último evento persistido, não em pontuação fictícia.
+    if(conversations.length){
+      const {data:recent,error:messageError}=await db.from("messages")
+        .select("conversation_id,direction,sent_at,body")
+        .eq("company_id",company_id).order("sent_at",{ascending:false}).limit(500);
+      if(messageError)throw messageError;
+      const newest=new Map();
+      for(const msg of recent||[]){
+        if(!newest.has(msg.conversation_id))newest.set(msg.conversation_id,msg);
+      }
+      conversations=conversations.map(conv=>{
+        const last=newest.get(conv.id);
+        return {...conv,last_direction:last?.direction||null,last_message_at:last?.sent_at||null,
+          preview:last?.body?String(last.body).slice(0,115):null};
+      });
+    }
+    window.ATENDE_ATTENDANTS=window.ATENDE_ATTENDANTS||{};
+    if(["admin","manager","supervisor"].includes(memberRoles[company_id])){
+      const {data:team,error:teamError}=await db.rpc("list_clinic_attendants",{p_company:company_id});
+      if(teamError)throw teamError;
+      window.ATENDE_ATTENDANTS[company_id]=team||[];
+    }
     rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at),...(window.ATENDE_ATTRIBUTION?.annotate(x)||{})}});
     render();
   }
