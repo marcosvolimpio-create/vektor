@@ -187,6 +187,17 @@
     }));
     const messaging={
       conversations:list,
+      claimConversation:async conversation_id=>{
+        const clinic_id=chosenCompany();
+        if(!clinic_id)throw Error("Selecione uma clínica.");
+        const entry=conversations.find(c=>c.id===conversation_id&&c.company_id===clinic_id);
+        if(!entry)throw Error("Conversa fora da clínica selecionada.");
+        const {data,error}=await db.rpc("claim_conversation",{p_conversation:conversation_id});
+        if(error)throw error;
+        if(!data?.id||data.company_id!==clinic_id)throw Error("O servidor não confirmou a atribuição.");
+        conversations=conversations.map(c=>c.id===conversation_id?{...c,...data}:c);
+        return data;
+      },
       loadMessages:async id=>{
         const {data,error}=await db.from("messages").select("*")
           .eq("conversation_id",id).eq("company_id",chosenCompany())
@@ -211,7 +222,7 @@
       return;
     }
     if(!messengerView)messengerView=window.ATENDE_CHAT.mount($('atende-inbox'),messaging);
-    else messengerView.update(list);
+    else messengerView.update(list,messaging);
   }
   async function showThread(id){
     activeConversation=id;
