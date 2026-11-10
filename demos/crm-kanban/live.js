@@ -314,6 +314,6 @@
     if(error){$('login-error').textContent=error.message;return}
     try{await onLogin()}catch(e){$('login-error').textContent=e.message}
   };
-  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){auth.style.display="grid";rows=[];render()}});
+  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){auth.style.display="grid";rows=[];companies=[];memberRoles={};$("atende-login").hidden=false;googleButton.hidden=false;requestPanel.hidden=true;approvalsButton.hidden=true;render()}});
   await onLogin().catch(e=>{$('login-error').textContent=e.message});
 })();
