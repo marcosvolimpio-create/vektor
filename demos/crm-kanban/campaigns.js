@@ -177,7 +177,7 @@
   }
   window.ATENDE_ATTRIBUTION={
     connect(supabase,fn,companies){
-      db=supabase;getCompanyId=fn;tenantMap=Object.fromEntries(companies.map(c=>[c.id,c.name]));campaigns=[];
+      db=supabase;getCompanyId=fn;tenantMap=Object.fromEntries(companies.map(c=>[c.id,/aloe/i.test(c.name)?"Aloe":/nagel/i.test(c.name)?"Nagel":c.name]));campaigns=[];
     },
     setRefresher(fn){reloadLeads=fn},
     reload,
