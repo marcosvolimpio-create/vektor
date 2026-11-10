@@ -14,7 +14,7 @@
   const $=id=>document.getElementById(id);
   const safe=x=>String(x??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-  let current=null,chat=null,backend=null,lastSummary=null,previousFocus=null;
+  let current=null,chat=null,backend=null,lastSummary=null,previousFocus=null,originContext=null;
   const stages=["Novo lead","Primeiro contato","Em atendimento","Follow-up","Agendado","Convertido","Perdido"];
   const escapeAttr=safe;
   function demoOnly(){return !window.ATENDE_CONFIG?.supabaseUrl;}
@@ -68,8 +68,10 @@
       if(backend?.addNote)await backend.addNote(lead,text);
       else if(!demoOnly())throw Error("Registro de notas não configurado.");
       if(current!==lead)return;
-      lead.history=lead.history||[];
-      lead.history.push((new Date()).toLocaleString("pt-BR")+" · Nota interna: "+text);
+      if(!backend?.addNote){
+        lead.history=lead.history||[];
+        lead.history.push((new Date()).toLocaleString("pt-BR")+" · Nota interna: "+text);
+      }
       renderDetail();
       $("lw-note-status").style.color="#387c61";
       $("lw-note-status").textContent=demoOnly()?"Nota temporária na demonstração.":"Nota registrada no histórico.";
@@ -160,6 +162,7 @@
   async function openLead(lead){
     if(!lead)return;
     previousFocus=document.activeElement;
+    originContext={tab:typeof tab==="string"?tab:null,boardScroll:document.getElementById("kanban")?.scrollLeft||0};
     current=lead;lastSummary=null;
     $("lw-title").textContent=lead.name;
     $("lw-subtitle").textContent=lead.company+" · "+(channelFrom(lead.source)||"Canal não identificado");
@@ -192,8 +195,10 @@
   function close(){
     div.classList.remove("active");document.body.style.overflow="";
     chat?.close?.();chat=null;current=null;lastSummary=null;
+    const board=document.getElementById("kanban");
+    if(board&&originContext?.tab==="kanban")board.scrollLeft=originContext.boardScroll||0;
     if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});
-    previousFocus=null;
+    previousFocus=null;originContext=null;
   }
   $("lw-close").onclick=close;
   $("lw-tab-detail").onclick=()=>$("lw-main").classList.add("details");
