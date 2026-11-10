@@ -306,6 +306,12 @@
     window.ATENDE_ATTRIBUTION?.setRefresher(loadData);
     $('company').onchange=()=>{activeConversation=null;loadData().catch(alertError)};
     await loadData();auth.style.display="none";
+    window.ATENDE_SESSION=Object.freeze({
+      roles:Object.freeze({...memberRoles}),
+      companies:companies.map(c=>({id:c.id,name:c.name,primary:Boolean((members||[]).find(m=>m.company_id===c.id&&m.is_primary))})),
+      authenticated:true
+    });
+    window.dispatchEvent(new CustomEvent("atende:session-ready",{detail:window.ATENDE_SESSION}));
   }
   $('atende-login').onsubmit=async event=>{
     event.preventDefault();$('login-error').textContent="";
@@ -314,6 +320,6 @@
     if(error){$('login-error').textContent=error.message;return}
     try{await onLogin()}catch(e){$('login-error').textContent=e.message}
   };
-  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){auth.style.display="grid";rows=[];companies=[];memberRoles={};$("atende-login").hidden=false;googleButton.hidden=false;requestPanel.hidden=true;approvalsButton.hidden=true;render()}});
+  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){window.ATENDE_SESSION=null;window.dispatchEvent(new Event("atende:session-ended"));auth.style.display="grid";rows=[];companies=[];memberRoles={};$("atende-login").hidden=false;googleButton.hidden=false;requestPanel.hidden=true;approvalsButton.hidden=true;render()}});
   await onLogin().catch(e=>{$('login-error').textContent=e.message});
 })();
