@@ -38,7 +38,9 @@
   logout.onclick=()=>db.auth.signOut();
   const formDialog=document.createElement("dialog");formDialog.className="atende-modal";document.body.append(formDialog);
   function modalForm(title, fields, onSubmit) {
-    formDialog.innerHTML = '<h2>'+escape(title)+'</h2><form id="atende-editor">'+fields.map(f=>'<label style="display:block;font-size:13px">'+escape(f.label)+'<input class="atende-field" name="'+f.name+'" type="'+(f.type||'text')+'" '+(f.required?'required':'')+' '+(f.type==='number'?'min="0" step="0.01"':'')+' value="'+escape(f.value||'')+'"></label>').join('')+'<p id="atende-editor-error" class="atende-error"></p><button class="atende-save">Salvar</button> <button type="button" id="atende-cancel" class="close">Cancelar</button></form>';
+    formDialog.innerHTML = '<h2>'+escape(title)+'</h2><form id="atende-editor">'+fields.map(f=>'<label style="display:block;font-size:13px">'+escape(f.label)+(f.type==='select'
+      ? '<select class="atende-field" name="'+f.name+'"><option value="">Nenhuma</option>'+(f.options||[]).map(o=>'<option value="'+escape(o.value)+'">'+escape(o.label)+'</option>').join('')+'</select>'
+      : '<input class="atende-field" name="'+f.name+'" type="'+(f.type||'text')+'" '+(f.required?'required':'')+' '+(f.type==='number'?'min="0" step="0.01"':'')+' value="'+escape(f.value||'')+'">')+'</label>').join('')+'<p id="atende-editor-error" class="atende-error"></p><button class="atende-save">Salvar</button> <button type="button" id="atende-cancel" class="close">Cancelar</button></form>';
     $('atende-cancel').onclick=()=>formDialog.close();
     $('atende-editor').onsubmit=async event => {
       event.preventDefault();
@@ -52,10 +54,12 @@
   headerButton.onclick=()=>modalForm("Novo lead",[
     {name:"name",label:"Nome do lead",required:true},{name:"phone",label:"Telefone"},
     {name:"source",label:"Origem do contato",value:"Manual"},{name:"procedure_name",label:"Procedimento de interesse"},
-    {name:"owner_name",label:"Responsável"},{name:"estimated_value",label:"Valor estimado",type:"number"}
+    {name:"owner_name",label:"Responsável"},{name:"estimated_value",label:"Valor estimado",type:"number"},
+    ...(window.ATENDE_ATTRIBUTION?.newLeadFields()||[])
   ],async v=>{
     const company_id=chosenCompany();if(!company_id)throw Error("Selecione uma clínica.");
-    const {error}=await db.from("leads").insert({company_id,name:v.name,phone:v.phone||null,source:v.source||"Manual",procedure_name:v.procedure_name||null,owner_name:v.owner_name||null,estimated_value:v.estimated_value?Number(v.estimated_value):null});if(error)throw error;
+    const attribution=window.ATENDE_ATTRIBUTION?.leadPayload(v)||{};
+    const {error}=await db.from("leads").insert({company_id,name:v.name,phone:v.phone||null,source:v.source||"Manual",procedure_name:v.procedure_name||null,owner_name:v.owner_name||null,estimated_value:v.estimated_value?Number(v.estimated_value):null,...attribution});if(error)throw error;
   });
   function leadActions(id) {
     const lead=rows.find(r=>r.id===id);const company_id=chosenCompany();
@@ -123,6 +127,7 @@
   }
   async function loadData(){
     const company_id=chosenCompany();if(!company_id)return;
+    if(window.ATENDE_ATTRIBUTION)await window.ATENDE_ATTRIBUTION.reload();
     const [l,a,p,c]=await Promise.all([
       db.from("leads").select("*").eq("company_id",company_id).order("created_at",{ascending:false}),
       db.from("activities").select("*").eq("company_id",company_id).order("occurred_at",{ascending:false}),
@@ -131,16 +136,18 @@
     ]);
     for(const res of [l,a,p,c])if(res.error)throw res.error;
     activities=a.data||[];appointments=p.data||[];conversations=c.data||[];
-    rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at)}});
+    rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at),...(window.ATENDE_ATTRIBUTION?.annotate(x)||{})}});
     render();
   }
   async function onLogin(){
     const {data:{user}}=await db.auth.getUser();
     if(!user){auth.style.display="grid";return}
     const {data,error}=await db.from("companies").select("id,name").order("name");if(error){$('login-error').textContent=error.message;return}
-    companies=data||[];companyById=Object.fromEntries(companies.map(x=>[x.id,x.name]));
+    companies=data||[];companyById=Object.fromEntries(companies.map(x=>[x.id,/aloe/i.test(x.name)?"Aloe":/nagel/i.test(x.name)?"Nagel":x.name]));
     if(!companies.length){$('login-error').textContent="Esta conta não tem acesso a nenhuma clínica.";return}
     $('company').innerHTML=companies.map(c=>'<option value="'+escape(c.name)+'">'+escape(c.name)+'</option>').join('');
+    window.ATENDE_ATTRIBUTION?.connect(db,chosenCompany,companies);
+    window.ATENDE_ATTRIBUTION?.setRefresher(loadData);
     $('company').onchange=()=>{activeConversation=null;loadData().catch(alertError)};
     await loadData();auth.style.display="none";
   }
