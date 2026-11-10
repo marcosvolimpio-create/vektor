@@ -169,7 +169,8 @@
         event.preventDefault();const id=event.dataTransfer.getData("text/plain");const stage=stageReverse[col.dataset.stage];
         const company_id=chosenCompany();if(!id||!stage||!company_id)return;
         const {error}=await db.from("leads").update({stage}).eq("id",id).eq("company_id",company_id);
-        if(error)alertError(error);await loadData();
+        if(error){alertError(error);return}
+        await loadData();
       };
     });
     // Substitui o clique que estava vinculado à função da demonstração.
@@ -254,7 +255,9 @@
       const {data,error}=await db.functions.invoke("send-message",{body:{conversation_id:id,text}});if(error||data?.error){$('atende-send-error').textContent=error?.message||data.error;return}await showThread(id);
     };
   }
+  let dataLoadVersion=0;
   async function loadData(){
+    const requestVersion=++dataLoadVersion;
     const company_id=chosenCompany();if(!company_id)return;
     if(window.ATENDE_ATTRIBUTION)await window.ATENDE_ATTRIBUTION.reload();
     const [l,a,p,c]=await Promise.all([
@@ -264,6 +267,7 @@
       db.from("conversations").select("*").eq("company_id",company_id)
     ]);
     for(const res of [l,a,p,c])if(res.error)throw res.error;
+    if(requestVersion!==dataLoadVersion||company_id!==chosenCompany())return;
     activities=a.data||[];appointments=p.data||[];conversations=c.data||[];
     // Prioridade é baseada no último evento persistido, não em pontuação fictícia.
     if(conversations.length){
@@ -271,6 +275,7 @@
         .select("conversation_id,direction,sent_at,body")
         .eq("company_id",company_id).order("sent_at",{ascending:false}).limit(500);
       if(messageError)throw messageError;
+      if(requestVersion!==dataLoadVersion||company_id!==chosenCompany())return;
       const newest=new Map();
       for(const msg of recent||[]){
         if(!newest.has(msg.conversation_id))newest.set(msg.conversation_id,msg);
@@ -287,8 +292,12 @@
       if(teamError)throw teamError;
       window.ATENDE_ATTENDANTS[company_id]=team||[];
     }
+    if(requestVersion!==dataLoadVersion||company_id!==chosenCompany())return;
     rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at),...(window.ATENDE_ATTRIBUTION?.annotate(x)||{})}});
     render();
+    window.dispatchEvent(new CustomEvent("atende:data-updated",{detail:{
+      companyId:company_id,company:companyById[company_id],leadIds:rows.map(x=>x.id),updatedAt:Date.now()
+    }}));
   }
   async function onLogin(){
     const {data:{user}}=await db.auth.getUser();
@@ -323,8 +332,9 @@
           .eq("company_id",company_id).eq("id",lead.id).select("id").single();
         if(error)throw error;
         if(!data)throw Error("Não foi possível confirmar a alteração do lead.");
-        lead.stage=changes.stage;lead.owner=changes.owner||"Não atribuído";lead.follow=changes.follow||"";
         await loadData();
+        const refreshed=rows.find(x=>String(x.id)===String(lead.id));
+        if(refreshed)Object.assign(lead,refreshed);
       },
       addNote:async (lead,content)=>{
         const company_id=chosenCompany();
@@ -338,6 +348,8 @@
         if(error)throw error;
         if(!data)throw Error("Não foi possível confirmar o registro da nota.");
         await loadData();
+        const refreshed=rows.find(x=>String(x.id)===String(lead.id));
+        if(refreshed)Object.assign(lead,refreshed);
       },
       getConversation:async lead=>{
         const id=chosenCompany();
