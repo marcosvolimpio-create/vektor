@@ -50,7 +50,7 @@
     if(!clinicItem)return;
     const phone=formatDigits(document.getElementById("cx-phone-"+key).value);
     const feedback=document.getElementById("cx-feedback-"+key);
-    if(phone.length!==11||!phone.startsWith("61")){feedback.className="cx-error";feedback.textContent="Informe o DDD e os 9 dígitos do celular. Não incluímos +55 no campo.";return}
+    if(phone.length!==11){feedback.className="cx-error";feedback.textContent="Informe o DDD e os 9 dígitos do celular. Não incluímos +55 no campo.";return}
     if(!adapter){
      feedback.className="cx-error";
      feedback.textContent="Conexão ainda em preparação. Falta configurar o aplicativo Meta e o banco exclusivo do ATENDE. O WhatsApp Business da clínica permanece intacto.";
