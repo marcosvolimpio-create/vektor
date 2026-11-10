@@ -225,17 +225,9 @@
         if(error)throw error;
         return data||[];
       },
-      sendText:async (conversation_id,text)=>{
-        const {data,error}=await db.functions.invoke("send-message",{body:{conversation_id,text}});
-        if(error)throw error;
-        if(data?.error)throw Error(data.error);
-      },
-      rewrite:async (text,mode)=>{
-        const {data,error}=await db.functions.invoke("rewrite-message",{body:{text,mode,company_id:chosenCompany()}});
-        if(error)throw error;
-        if(data?.error)throw Error(data.error);
-        return data?.text;
-      }
+      // Read-only while channel messaging functions have not been deployed.
+      sendText:undefined,
+      rewrite:undefined
     };
     if(!window.ATENDE_CHAT){
       $('atende-inbox').textContent="Interface de conversas indisponível.";
@@ -368,19 +360,10 @@
         if(error)throw error;
         return data||[];
       },
-      sendText:async (conversation_id,text)=>{
-        if(!chosenCompany())throw Error("Selecione uma clínica.");
-        const {data,error}=await db.functions.invoke("send-message",{body:{conversation_id,text}});
-        if(error)throw error;
-        if(data?.error)throw Error(data.error);
-      },
-      rewrite:async (text,mode)=>{
-        const id=chosenCompany();if(!id)throw Error("Selecione uma clínica.");
-        const {data,error}=await db.functions.invoke("rewrite-message",{body:{company_id:id,text,mode}});
-        if(error)throw error;
-        if(data?.error)throw Error(data.error);
-        return data?.text;
-      },
+      // Independent CRM is not yet connected to Meta. Do not show a composer
+      // that attempts to call nonexistent send-message/rewrite-message functions.
+      sendText:undefined,
+      rewrite:undefined,
       summarize:async lead=>{
         const id=chosenCompany();if(!id||companyById[id]!==lead.company)throw Error("Lead fora da clínica selecionada.");
         // Enviar apenas IDs; a Edge Function autenticada deve consultar TODO o histórico
