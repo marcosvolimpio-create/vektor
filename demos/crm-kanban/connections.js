@@ -51,7 +51,43 @@
     '<div class="cx-profile">◎ <span><b>Instagram Business / Creator</b><br>Autorização no próprio Instagram, sem senha no ATENDE.</span></div>'+
     '<button type="button" class="cx-connect" data-instagram-connect="'+escape(c.key)+'">◎ Conectar Instagram</button>'+
     '<p class="cx-instagram-status" id="cx-ig-feedback-'+c.key+'" role="status" aria-live="polite">Aguardando autorização. A conta será identificada depois do login oficial da Meta.</p></article>').join("")+
-    '</div><section class="cx-bottom"><h3 style="font-size:15px;margin:0">Como será a conexão</h3><div class="cx-steps"><div class="cx-step"><b>1. Informe o número</b><span>Use o WhatsApp Business que já funciona na clínica.</span></div><div class="cx-step"><b>2. Autorize pela Meta</b><span>Confirme a empresa e o número no cadastro oficial, pelo celular quando solicitado.</span></div><div class="cx-step"><b>3. Teste a conversa</b><span>O ATENDE. somente marcará conectado após receber o webhook e validar o atendimento.</span></div></div><p>Para o Instagram, clique em <b>Conectar Instagram</b>, faça login na conta profissional autorizada e permita o acesso às mensagens. A aprovação da Meta e o teste do webhook serão necessários antes de marcar a conexão como ativa. O Facebook Messenger será conectado separadamente.</p></section>';
+    '</div><div class="cx-section-heading"><h3>Facebook Messenger</h3><span>Conexão por Página do Facebook</span></div><div class="cx-cards">'+visible.map(c=>
+    '<article class="cx-card" data-messenger-clinic="'+escape(c.key)+'"><div class="cx-head"><h4>'+escape(c.title)+'</h4><span class="cx-status" id="cx-fb-status-'+c.key+'">Não conectado</span></div>'+
+    '<p>As mensagens do Messenger serão vinculadas à Página escolhida, não ao perfil pessoal do Facebook.</p>'+
+    '<div class="cx-profile"><span aria-hidden="true" style="font-weight:800;color:#1877f2;font-size:20px">f</span> <span><b>Página do Facebook</b><br>Autorize com um perfil que tenha acesso para gerenciar mensagens da Página.</span></div>'+
+    '<button type="button" class="cx-connect" data-messenger-connect="'+escape(c.key)+'">Conectar Messenger</button>'+
+    '<p class="cx-instagram-status" id="cx-fb-feedback-'+c.key+'" role="status" aria-live="polite">Aguardando autorização. Depois do login, você selecionará a Página correspondente à clínica.</p></article>').join("")+
+    '</div><section class="cx-bottom"><h3 style="font-size:15px;margin:0">Como será a conexão</h3><div class="cx-steps"><div class="cx-step"><b>1. Informe o número</b><span>Use o WhatsApp Business que já funciona na clínica.</span></div><div class="cx-step"><b>2. Autorize pela Meta</b><span>Confirme a empresa e o número no cadastro oficial, pelo celular quando solicitado.</span></div><div class="cx-step"><b>3. Teste a conversa</b><span>O ATENDE. somente marcará conectado após receber o webhook e validar o atendimento.</span></div></div><p>Para o Instagram, clique em <b>Conectar Instagram</b>, faça login na conta profissional autorizada e permita o acesso às mensagens. A aprovação da Meta e o teste do webhook serão necessários antes de marcar a conexão como ativa. Para o Messenger, use <b>Conectar Messenger</b> e selecione a Página da clínica. Cada canal será ativado somente após autorização, webhook e teste de mensagens.</p></section>';
+  for(const button of view.querySelectorAll("[data-messenger-connect]")){
+    button.onclick=async()=>{
+      const clinic=button.dataset.messengerConnect;
+      const feedback=document.getElementById("cx-fb-feedback-"+clinic);
+      if(!adapter?.startMessenger){
+        feedback.className="cx-instagram-status cx-error";
+        feedback.textContent="Conexão em preparação: ainda faltam Facebook Login, permissões da Página e backend exclusivo do ATENDE. Nenhuma Página foi conectada.";
+        return;
+      }
+      button.disabled=true;button.textContent="Preparando autorização...";
+      try{
+        const result=await adapter.startMessenger({clinic});
+        if(!result||result.status!=="authorization_required"||typeof result.url!=="string")
+          throw Error("O servidor não retornou um pedido de autorização válido.");
+        const dest=new URL(result.url);
+        if(dest.protocol!=="https:"||!["www.facebook.com","facebook.com","web.facebook.com"].includes(dest.hostname))
+          throw Error("Destino de autorização não reconhecido.");
+        const windowRef=window.open(dest.href,"atende-messenger-oauth","width=650,height=760");
+        feedback.className="cx-instagram-status";
+        feedback.textContent=windowRef?
+          "Selecione a Página desta clínica na Meta e conclua a autorização. O status só mudará após validação e teste.":
+          "Autorize as janelas pop-up para iniciar o login oficial do Facebook.";
+      }catch(error){
+        feedback.className="cx-instagram-status cx-error";
+        feedback.textContent=error.message||String(error);
+      }finally{
+        button.disabled=false;button.textContent="Conectar Messenger";
+      }
+    };
+  }
   for(const button of view.querySelectorAll("[data-instagram-connect]")){
     button.onclick=async()=>{
       const clinic=button.dataset.instagramConnect;
