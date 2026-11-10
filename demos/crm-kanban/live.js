@@ -42,6 +42,49 @@
     $("atende-request-feedback").textContent=error?error.message:(data==="already_member"?"Acesso cadastrado. Atualize a página.":"Solicitação enviada. Aguarde a aprovação da administração.");
     btn.disabled=false;
   };
+  const approvalsView=document.createElement("section");
+  approvalsView.id="atende-approvals";approvalsView.className="hidden";
+  $("leads").after(approvalsView);
+  const approvalsButton=document.createElement("button");
+  approvalsButton.dataset.tab="approvals";approvalsButton.textContent="Aprovar acessos";
+  approvalsButton.hidden=true;
+  document.querySelector("aside nav").append(approvalsButton);
+  let memberRoles={};
+  async function renderApprovals(){
+    const clinicId=chosenCompany();
+    if(!clinicId||memberRoles[clinicId]!=="admin"){
+      approvalsView.innerHTML="<p>Somente o Administrador aprova novos acessos.</p>";return;
+    }
+    const {data:requests,error}=await db.from("access_requests")
+      .select("id,requester_email,requested_role,requested_at")
+      .eq("company_id",clinicId).eq("status","pending").order("requested_at",{ascending:true});
+    if(error){approvalsView.textContent=error.message;return;}
+    approvalsView.innerHTML="<h3>Aprovar acessos</h3><p>Os aprovados poderão trabalhar nas duas clínicas. Recepção terá uma clínica principal e poderá apoiar a outra.</p>"+
+      ((requests||[]).length?(requests||[]).map(x=>
+        '<div class="detail" data-request="'+escape(x.id)+'"><strong>'+escape(x.requester_email||"Usuário")+
+        '</strong><p>Perfil solicitado: '+escape(x.requested_role)+'</p>'+
+        '<select data-granted class="atende-field"><option value="reception" '+(x.requested_role==="reception"?"selected":"")+'>Recepção</option>'+
+        '<option value="manager" '+(x.requested_role==="manager"?"selected":"")+'>Gestão</option>'+
+        '<option value="supervisor" '+(x.requested_role==="supervisor"?"selected":"")+'>Supervisão</option></select>'+
+        '<button type="button" class="atende-save" data-review="approve">Aprovar</button> '+
+        '<button type="button" class="close" data-review="reject">Rejeitar</button></div>'
+      ).join(""):'<p class="atende-help">Sem solicitações pendentes nesta clínica.</p>');
+    approvalsView.querySelectorAll("[data-review]").forEach(button=>button.onclick=async()=>{
+      const box=button.closest("[data-request]"),approve=button.dataset.review==="approve";
+      if(!confirm(approve?"Autorizar este usuário a trabalhar nas duas clínicas?":"Rejeitar solicitação?"))return;
+      button.disabled=true;
+      const {error}=await db.rpc("review_clinic_access",{
+        p_request_id:box.dataset.request,p_approve:approve,p_granted_role:box.querySelector("[data-granted]").value
+      });
+      if(error){alertError(error);button.disabled=false;return;}
+      await renderApprovals();
+    });
+  }
+  approvalsButton.onclick=()=>{
+    tab="approvals";
+    document.querySelectorAll("aside nav [data-tab]").forEach(x=>x.classList.toggle("active",x===approvalsButton));
+    $("title").textContent="Aprovar acessos";render();
+  };
   let companies = [], companyById = {}, appointments = [], activities = [], conversations = [], messages = [], activeConversation = null;
   const stageMap = {new:"Novo lead",first_contact:"Primeiro contato",attending:"Em atendimento",follow_up:"Follow-up",scheduled:"Agendado",converted:"Convertido",lost:"Perdido"};
   const stageReverse = Object.fromEntries(Object.entries(stageMap).map(([id,label]) => [label,id]));
@@ -117,6 +160,8 @@
   openCard=function(id){originalOpenCard(id);leadActions(id);};
   render=function(){
     originalRender();
+    approvalsView.classList.toggle("hidden",tab!=="approvals");
+    if(tab==="approvals")void renderApprovals();
     $('atende-inbox').classList.toggle('hidden',tab!=='inbox');
     if(tab==='inbox')renderInbox();
     document.querySelectorAll('#kanban .column').forEach(col=>{
@@ -204,6 +249,12 @@
       return;
     }
     $("atende-login").hidden=false;googleButton.hidden=false;requestPanel.hidden=true;
+    const {data:members,error:memberError}=await db.from("company_members").select("company_id,role,is_primary");
+    if(memberError)throw memberError;
+    memberRoles=Object.fromEntries((members||[]).map(m=>[m.company_id,m.role]));
+    const primary=new Set((members||[]).filter(m=>m.is_primary).map(m=>m.company_id));
+    companies.sort((a,b)=>(primary.has(b.id)?1:0)-(primary.has(a.id)?1:0));
+    approvalsButton.hidden=!Object.values(memberRoles).includes("admin");
     $('company').innerHTML=companies.map(c=>'<option value="'+escape(companyById[c.id])+'">'+escape(c.name)+'</option>').join('');
     window.ATENDE_LEAD_WORKSPACE?.setBackend({
       getConversation:async lead=>{
