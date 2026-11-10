@@ -131,7 +131,7 @@
     ]);
     for(const res of [l,a,p,c])if(res.error)throw res.error;
     activities=a.data||[];appointments=p.data||[];conversations=c.data||[];
-    rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at)}})});
+    rows=(l.data||[]).map(x=>{const appointment=appointments.find(p=>p.lead_id===x.id);return{id:x.id,company:companyById[x.company_id]||"Clínica",name:x.name,procedure:x.procedure_name||"Não informado",source:x.source||"Manual",owner:x.owner_name||"Recepção",stage:stageMap[x.stage]||"Novo lead",value:Number(x.estimated_value)||0,first:x.first_contact_at||"",follow:x.next_followup_at||"",appointment:appointment?.scheduled_at||"",bookedAt:appointment?.booked_at||"",paid:Number(appointment?.amount_paid)||0,history:activities.filter(a=>a.lead_id===x.id).map(a=>a.content+" • "+a.occurred_at)}});
     render();
   }
   async function onLogin(){
