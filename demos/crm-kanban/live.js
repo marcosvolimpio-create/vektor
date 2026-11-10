@@ -14,11 +14,34 @@
   const auth = document.createElement("div"); auth.className = "atende-auth";
   auth.innerHTML = '<div class="card"><h2>atende.</h2><p>CRM exclusivo da Aloe e Nagel</p><form id="atende-login"><label>E-mail<input type="email" name="email" autocomplete="username" required></label><label>Senha<input type="password" name="password" autocomplete="current-password" required></label><p class="atende-error" id="login-error"></p><button type="submit">Entrar no CRM</button></form><p class="atende-help">Apenas contas autorizadas pela administração.</p></div>';
   document.body.append(auth);
+  const googleButton=document.createElement("button");
+  googleButton.type="button";
+  googleButton.textContent="Entrar com Google";
+  googleButton.style="width:100%;margin-top:12px;background:white;color:#302b46;border:1px solid #dad5e7;font-weight:700";
+  auth.querySelector(".card").append(googleButton);
+  const requestPanel=document.createElement("div");
+  requestPanel.hidden=true;
+  requestPanel.innerHTML='<h3>Solicitar acesso</h3><p class="atende-help">Sua conta está autenticada, mas ainda precisa ser aprovada. Gestão e Recepção podem trabalhar nas duas clínicas, respeitando os papéis autorizados.</p><form id="atende-access-form"><label>Clínica principal<select class="atende-field" name="clinic"><option value="aloe">Aloe Medicina Estética</option><option value="nagel">Nagel Anatomia dos Pés</option></select></label><label>Perfil<select class="atende-field" name="role"><option value="reception">Recepção</option><option value="manager">Gestão</option><option value="supervisor">Supervisão</option></select></label><button type="submit">Solicitar acesso</button></form><p class="atende-help" id="atende-request-feedback"></p><button type="button" id="atende-request-logout" style="background:white;color:#554971">Sair</button>';
+  auth.querySelector(".card").append(requestPanel);
   let db;
   try {
     const module = await import("https://esm.sh/@supabase/supabase-js@2.75.0");
     db = module.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
   } catch(e) { $('login-error').textContent = "Não foi possível carregar a conexão segura. " + e.message; return; }
+  googleButton.onclick=async()=>{
+    googleButton.disabled=true;
+    const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin+window.location.pathname}});
+    if(error){$("login-error").textContent="Não foi possível iniciar o Google: "+error.message;googleButton.disabled=false;}
+  };
+  $("atende-request-logout").onclick=()=>db.auth.signOut();
+  $("atende-access-form").onsubmit=async event=>{
+    event.preventDefault();
+    const form=event.currentTarget, values=new FormData(form);
+    const btn=form.querySelector("button[type=submit]");btn.disabled=true;
+    const {data,error}=await db.rpc("request_clinic_access",{p_clinic_slug:String(values.get("clinic")),p_requested_role:String(values.get("role"))});
+    $("atende-request-feedback").textContent=error?error.message:(data==="already_member"?"Acesso cadastrado. Atualize a página.":"Solicitação enviada. Aguarde a aprovação da administração.");
+    btn.disabled=false;
+  };
   let companies = [], companyById = {}, appointments = [], activities = [], conversations = [], messages = [], activeConversation = null;
   const stageMap = {new:"Novo lead",first_contact:"Primeiro contato",attending:"Em atendimento",follow_up:"Follow-up",scheduled:"Agendado",converted:"Convertido",lost:"Perdido"};
   const stageReverse = Object.fromEntries(Object.entries(stageMap).map(([id,label]) => [label,id]));
@@ -175,7 +198,12 @@
     if(!user){auth.style.display="grid";return}
     const {data,error}=await db.from("companies").select("id,name").order("name");if(error){$('login-error').textContent=error.message;return}
     companies=data||[];companyById=Object.fromEntries(companies.map(x=>[x.id,/aloe/i.test(x.name)?"Aloe":/nagel/i.test(x.name)?"Nagel":x.name]));
-    if(!companies.length){$('login-error').textContent="Esta conta não tem acesso a nenhuma clínica.";return}
+    if(!companies.length){
+      $("atende-login").hidden=true;googleButton.hidden=true;requestPanel.hidden=false;
+      auth.style.display="grid";$("login-error").textContent="";
+      return;
+    }
+    $("atende-login").hidden=false;googleButton.hidden=false;requestPanel.hidden=true;
     $('company').innerHTML=companies.map(c=>'<option value="'+escape(companyById[c.id])+'">'+escape(c.name)+'</option>').join('');
     window.ATENDE_LEAD_WORKSPACE?.setBackend({
       getConversation:async lead=>{
