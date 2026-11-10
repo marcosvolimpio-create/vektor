@@ -28,6 +28,8 @@
   }
   function toDatetimeLocal(value){
     if(!value)return "";
+    const br=String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+    if(br)return br[3]+"-"+br[2]+"-"+br[1]+"T"+(br[4]||"00")+":"+(br[5]||"00");
     const d=new Date(value);
     if(Number.isNaN(d.valueOf()))return "";
     const x=n=>String(n).padStart(2,"0");
