@@ -2,41 +2,77 @@
 const style=document.createElement('style');
 style.textContent=".msg-shell{display:grid;grid-template-columns:270px 1fr;min-height:540px;height:72vh;max-height:760px;border:1px solid #e7e5ee;border-radius:17px;overflow:hidden;background:white}.msg-sidebar{border-right:1px solid #eee;overflow:auto}.msg-sidebar h3{padding:16px;margin:0;font-size:15px}.msg-conv{display:block;width:100%;border:0;border-top:1px solid #f1eff5;text-align:left;background:white;padding:14px;cursor:pointer}.msg-conv.sel,.msg-conv:hover{background:#f4effe}.msg-conv b,.msg-conv small{display:block}.msg-conv b{font-size:13px}.msg-conv small{margin-top:5px;color:#888;font-size:11px}.msg-view{display:flex;flex-direction:column;min-width:0;background:#f5f2f8}.msg-top{padding:16px;background:white;border-bottom:1px solid #eae6ef;font-size:14px;font-weight:700}.msg-top small{display:block;font-weight:400;font-size:11px;color:#8a829b;margin-top:4px}.msg-bubbles{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px}.msg-bubble{background:white;align-self:flex-start;padding:11px 13px;border-radius:13px;max-width:80%;box-shadow:0 1px 4px #1412250a;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}.msg-bubble.mine{align-self:flex-end;background:#e9e1fb}.msg-bubble small{display:block;font-size:9px;color:#817d8e;text-align:right;margin-top:6px}.msg-composer{padding:12px;background:white;border-top:1px solid #ece9ef}.msg-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}.msg-tools button,.msg-options button,.msg-clip button{font:inherit;font-size:11px;background:#f7f5fb;border:1px solid #e7e2ef;border-radius:8px;padding:7px 9px;cursor:pointer}.msg-tools .ai{background:#eee7ff;color:#6547b7;font-weight:700}.msg-form{display:flex;gap:9px}.msg-form textarea{font:inherit;font-size:12px;line-height:1.5;flex:1;resize:vertical;min-width:0;max-height:150px;border:1px solid #e5e0ee;background:#f9f8fc;border-radius:11px;padding:11px}.msg-form button{border:0;border-radius:10px;background:#6d4ce4;color:white;padding:10px 15px;cursor:pointer}.msg-options{display:flex;flex-wrap:wrap;gap:5px;padding:8px 0}.msg-hint{font-size:11px;color:#837b92;margin:7px 0 0}.msg-clip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0}.msg-clip audio{max-width:230px}.msg-attachments{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0}.msg-file{font-size:11px;border:1px solid #e2deeb;border-radius:10px;padding:9px 10px;background:#f7f5fc;display:flex;align-items:center;gap:7px;max-width:100%;overflow-wrap:anywhere}.msg-file button{border:0;background:#e6dfef;color:#5d4c77;border-radius:7px;padding:5px 8px;cursor:pointer}.msg-file-preview{display:block;max-height:95px;max-width:150px;border-radius:7px;margin:5px 0}.msg-attach-note{font-size:10px;color:#827b93}.msg-options[hidden],.msg-clip[hidden],.msg-attachments[hidden],.msg-composer[hidden]{display:none!important}.msg-back{display:none;background:#eee9fa;border:0;border-radius:7px;padding:5px;margin-right:8px}@media(max-width:700px){.msg-shell{grid-template-columns:1fr;height:69vh}.msg-shell .msg-view{display:none}.msg-shell.open .msg-sidebar{display:none}.msg-shell.open .msg-view{display:flex}.msg-back{display:inline-block}}";
 style.textContent += ".msg-shell{grid-template-columns:minmax(285px,320px) minmax(0,1fr)}.msg-sidebar{width:auto!important;min-width:0!important;flex-shrink:1!important;display:flex;flex-direction:column}.msg-sidebar h3{margin:0;padding:15px 16px 8px}.msg-search-panel{padding:8px 12px 12px;border-bottom:1px solid #eee;display:grid;gap:9px}.msg-search-panel input,.msg-search-panel select{width:100%;box-sizing:border-box;padding:9px;border:1px solid #e2deeb;border-radius:9px;background:#fff;font:inherit;font-size:12px}.msg-filters{display:grid;grid-template-columns:1fr 1fr;gap:6px}.msg-queue-summary{font-size:11px;color:#716b82}.msg-list{overflow:auto;flex:1;min-height:0}.msg-conv{border-left:3px solid transparent}.msg-conv.sel{border-left-color:#7654d9}.msg-conv .msg-meta{display:flex;justify-content:space-between;gap:5px;align-items:center;margin-top:7px}.msg-conv .msg-state{font-size:10px;border-radius:20px;padding:3px 6px;background:#f1eef8;color:#6b597d}.msg-conv .msg-state.pending{background:#fff1d9;color:#8d5e25}.msg-conv .msg-state.open{background:#e9f5ee;color:#367052}.msg-claim{padding:6px 8px;border-radius:7px;border:1px solid #ddd6ed;background:#fff;color:#554a76;font-size:11px;cursor:pointer;margin-top:8px}.msg-claim[disabled]{opacity:.6;cursor:not-allowed}.msg-top .msg-channel{margin-top:5px}.msg-claim-status{font-size:11px;color:#6d677a;margin:7px 0 0}.msg-empty{padding:18px;color:#807a8e;font-size:12px;line-height:1.5}@media(max-width:700px){.msg-shell{grid-template-columns:1fr}.msg-sidebar{width:100%!important}}";
+style.textContent += ".msg-conv.has-inbound{border-left-color:#d48b34}.msg-conv .msg-priority{display:block;margin-top:5px;color:#a65e27;font-size:10px;font-weight:700}.msg-toolbar{padding:8px 12px;border-bottom:1px solid #ece9f3}.msg-toolbar button{border:1px solid #e2dded;padding:7px;border-radius:8px;background:#fff;cursor:pointer;font-size:11px}.msg-toolbar button.active{background:#e9e0fb;color:#583caa}.msg-transfer{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.msg-transfer select{padding:7px;font-size:11px;border:1px solid #dfd9ea;border-radius:8px;max-width:250px}.msg-link-lead{border:1px solid #e2dbe9;border-radius:8px;padding:7px 9px;background:#fff;font-size:11px;color:#51447b;cursor:pointer}";
 document.head.append(style);
 const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function mount(container,options){
 let selected=null,recording=null,stream=null,recorder=null,chunks=[],convs=options.conversations||[],pendingFiles=[];const MAX_FILE_BYTES=500*1024*1024;
-let query="",channelFilter="all",statusFilter="all";
-container.innerHTML='<div class="msg-shell"><aside class="msg-sidebar"><h3>Caixa de Entrada <small style="font-size:10px;color:#777">WhatsApp · Instagram · Messenger</small></h3><div class="msg-search-panel"><input class="msg-search" type="search" placeholder="Buscar contato ou mensagem..." aria-label="Pesquisar conversas"><div class="msg-filters"><select class="msg-channel-filter" aria-label="Filtrar por canal"><option value="all">Todos os canais</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="messenger">Messenger</option></select><select class="msg-status-filter" aria-label="Filtrar por situação"><option value="all">Todas as situações</option><option value="open">Em aberto</option><option value="pending">Pendentes</option><option value="resolved">Resolvidas</option><option value="free">Sem responsável</option></select></div><div class="msg-queue-summary" role="status"></div></div><div class="msg-list"></div></aside><section class="msg-view"><header class="msg-top"><button class="msg-back" type="button">←</button><span class="msg-name">Escolha uma conversa</span><small class="msg-channel"></small><div class="msg-assignment"></div><p class="msg-claim-status" aria-live="polite"></p></header><div class="msg-bubbles"></div><footer class="msg-composer" hidden><div class="msg-tools"><button type="button" class="msg-emoji">☺ Emojis</button><button type="button" class="msg-attach">📎 Anexar arquivos</button><button type="button" class="msg-audio">🎙 Gravar áudio</button><button type="button" class="ai msg-ai">✦ Ajustar com IA</button></div><div class="msg-options" hidden></div><input class="msg-files-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" hidden><div class="msg-attachments" hidden></div><div class="msg-clip" hidden></div><form class="msg-form"><textarea rows="2" spellcheck="true" placeholder="Digite sua mensagem..."></textarea><button type="submit">Enviar ➤</button></form><p class="msg-hint"></p></footer></section></div>';
+let query="",channelFilter="all",statusFilter="all",priorityFirst=true;
+container.innerHTML='<div class="msg-shell"><aside class="msg-sidebar"><h3>Caixa de Entrada <small style="font-size:10px;color:#777">WhatsApp · Instagram · Messenger</small></h3><div class="msg-search-panel"><input class="msg-search" type="search" placeholder="Buscar contato ou mensagem..." aria-label="Pesquisar conversas"><div class="msg-filters"><select class="msg-channel-filter" aria-label="Filtrar por canal"><option value="all">Todos os canais</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="messenger">Messenger</option></select><select class="msg-status-filter" aria-label="Filtrar por situação"><option value="all">Todas as situações</option><option value="open">Em aberto</option><option value="pending">Pendentes</option><option value="resolved">Resolvidas</option><option value="free">Sem responsável</option><option value="unanswered">Aguardando resposta</option></select></div><div class="msg-queue-summary" role="status"></div></div><div class="msg-toolbar"><button type="button" class="msg-priority-toggle active">Aguardando resposta primeiro</button></div><div class="msg-list"></div></aside><section class="msg-view"><header class="msg-top"><button class="msg-back" type="button">←</button><span class="msg-name">Escolha uma conversa</span><small class="msg-channel"></small><div class="msg-assignment"></div><div class="msg-transfer"></div><p class="msg-claim-status" aria-live="polite"></p></header><div class="msg-bubbles"></div><footer class="msg-composer" hidden><div class="msg-tools"><button type="button" class="msg-emoji">☺ Emojis</button><button type="button" class="msg-attach">📎 Anexar arquivos</button><button type="button" class="msg-audio">🎙 Gravar áudio</button><button type="button" class="ai msg-ai">✦ Ajustar com IA</button></div><div class="msg-options" hidden></div><input class="msg-files-input" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" hidden><div class="msg-attachments" hidden></div><div class="msg-clip" hidden></div><form class="msg-form"><textarea rows="2" spellcheck="true" placeholder="Digite sua mensagem..."></textarea><button type="submit">Enviar ➤</button></form><p class="msg-hint"></p></footer></section></div>';
 const $=s=>container.querySelector(s);const note=(t,bad)=>{$('.msg-hint').textContent=t;$('.msg-hint').style.color=bad?'#b42342':'#817a90'};
 function normalizedChannel(c){const raw=String(c.channel||"").toLowerCase();return raw==="facebook"?"messenger":raw}
 function searchable(c){return [c.contact_label,c.preview,c.channel,c.company].join(" ").toLocaleLowerCase("pt-BR")}
-function visibleConversations(){return convs.filter(c=>(channelFilter==="all"||normalizedChannel(c)===channelFilter)&&(statusFilter==="all"||(statusFilter==="free"?!c.assigned_to:String(c.status||"open")===statusFilter))&&(!query||searchable(c).includes(query)))}
+function needsReply(c){return c.last_direction==="inbound"&&c.status!=="resolved"}
+function importance(c){return needsReply(c)?0:c.status==="pending"?1:!c.assigned_to?2:3}
+function visibleConversations(){return convs.filter(c=>(channelFilter==="all"||normalizedChannel(c)===channelFilter)&&(statusFilter==="all"||(statusFilter==="free"?!c.assigned_to:statusFilter==="unanswered"?needsReply(c):String(c.status||"open")===statusFilter))&&(!query||searchable(c).includes(query))).sort((a,b)=>{const order=priorityFirst?importance(a)-importance(b):0;if(order)return order;return (Date.parse(b.last_message_at||b.updated_at)||0)-(Date.parse(a.last_message_at||a.updated_at)||0)})}
 function assignmentText(c){return c.assigned_to?"Atendimento atribuído":"Disponível para assumir"}
 function list(){
  const items=visibleConversations();
- const pending=convs.filter(c=>c.status==="pending").length,free=convs.filter(c=>!c.assigned_to).length;
- $(".msg-queue-summary").textContent=items.length+" de "+convs.length+" conversas · "+pending+" pendente(s) · "+free+" disponível(is)";
- $(".msg-list").innerHTML=items.map(c=>'<button class="msg-conv '+(selected===c.id?'sel':'')+'" data-id="'+esc(c.id)+'"><b>'+esc(c.contact_label||"Contato")+'</b><small>'+esc(c.channel||"Canal não identificado")+' · '+esc(c.preview||"Abrir atendimento")+'</small><span class="msg-meta"><span class="msg-state '+esc(c.status||"open")+'">'+esc(c.status==="pending"?"Pendente":c.status==="resolved"?"Resolvida":"Em aberto")+'</span><small>'+esc(assignmentText(c))+'</small></span></button>').join("")||'<div class="msg-empty">Nenhuma conversa encontrada para estes filtros.</div>';
+ const pending=convs.filter(c=>c.status==="pending").length,free=convs.filter(c=>!c.assigned_to).length,unanswered=convs.filter(needsReply).length;
+ $(".msg-queue-summary").textContent=items.length+" de "+convs.length+" conversas · "+pending+" pendentes · "+free+" livres · "+unanswered+" aguardando resposta";
+ $(".msg-list").innerHTML=items.map(c=>
+ '<button class="msg-conv '+(selected===c.id?'sel':'')+(needsReply(c)?' has-inbound':'')+'" data-id="'+esc(c.id)+'">'+
+ '<b>'+esc(c.contact_label||"Contato")+'</b>'+
+ '<small>'+esc(c.channel||"Canal não identificado")+' · '+esc(c.preview||"Abrir atendimento")+'</small>'+
+ (needsReply(c)?'<span class="msg-priority">● Aguardando resposta</span>':'')+
+ '<span class="msg-meta"><span class="msg-state '+esc(c.status||"open")+'">'+
+ esc(c.status==="pending"?"Pendente":c.status==="resolved"?"Resolvida":"Em aberto")+
+ '</span><small>'+esc(assignmentText(c))+'</small></span></button>').join("")||
+ '<div class="msg-empty">Nenhuma conversa encontrada para estes filtros.</div>';
  $(".msg-list").querySelectorAll(".msg-conv").forEach(b=>b.onclick=()=>void open(b.dataset.id));
 }
 $(".msg-search").oninput=e=>{query=String(e.target.value||"").trim().toLocaleLowerCase("pt-BR");list()};
 $(".msg-channel-filter").onchange=e=>{channelFilter=e.target.value;list()};
 $(".msg-status-filter").onchange=e=>{statusFilter=e.target.value;list()};
+$(".msg-priority-toggle").onclick=e=>{priorityFirst=!priorityFirst;e.currentTarget.classList.toggle("active",priorityFirst);list()};
 function renderAssignment(c){
- const slot=$(".msg-assignment"),label=$(".msg-claim-status");slot.replaceChildren();label.textContent="";
+ const slot=$(".msg-assignment"),transfer=$(".msg-transfer"),label=$(".msg-claim-status");
+ slot.replaceChildren();transfer.replaceChildren();label.textContent="";
  if(!c)return;
- if(c.assigned_to){label.textContent="Esta conversa possui responsável atribuído.";return}
- if(typeof options.claimConversation!=="function"){label.textContent="Atribuição indisponível nesta versão.";return}
+ if(c.lead_id&&typeof options.openLead==="function"){
+  const btn=document.createElement("button");btn.type="button";btn.className="msg-link-lead";btn.textContent="Abrir ficha 360°";
+  btn.onclick=()=>options.openLead(c.lead_id);slot.append(btn);
+ }
+ if(typeof options.transferConversation==="function"&&Array.isArray(options.attendants)&&options.attendants.length){
+  const select=document.createElement("select");select.setAttribute("aria-label","Selecionar atendente");
+  select.innerHTML='<option value="">Selecione um atendente</option>'+options.attendants.map(a=>'<option value="'+esc(a.user_id)+'" '+(c.assigned_to===a.user_id?'selected':'')+'>'+esc((a.email||a.user_id)+" · "+a.role)+'</option>').join("");
+  const move=document.createElement("button");move.type="button";move.className="msg-claim";move.textContent="Transferir";
+  const release=document.createElement("button");release.type="button";release.className="msg-claim";release.textContent="Liberar";
+  const change=async(next)=>{
+   move.disabled=true;release.disabled=true;label.textContent="Atualizando responsável...";
+   try{
+    const updated=await options.transferConversation(c.id,next);
+    const i=convs.findIndex(x=>x.id===c.id);
+    if(i>=0)convs[i]={...convs[i],...updated};
+    renderAssignment(convs[i]||c);list();
+    label.textContent="Atribuição atualizada.";
+   }catch(e){label.textContent=e.message||String(e);move.disabled=false;release.disabled=false}
+  };
+  move.onclick=()=>{if(select.value)void change(select.value)};
+  release.onclick=()=>void change(null);
+  transfer.append(select,move,release);
+ }
+ if(c.assigned_to){if(!transfer.childNodes.length)label.textContent="Conversa atribuída.";return}
+ if(typeof options.claimConversation!=="function"){label.textContent="Atribuição indisponível.";return}
  const btn=document.createElement("button");btn.type="button";btn.className="msg-claim";btn.textContent="Assumir atendimento";slot.append(btn);
  btn.onclick=async()=>{
-   btn.disabled=true;label.textContent="Atribuindo atendimento...";
-   try{
-     const updated=await options.claimConversation(c.id);
-     const index=convs.findIndex(x=>x.id===c.id);
-     if(index>=0)convs[index]={...convs[index],...(updated||{}),assigned_to:updated?.assigned_to||"atribuído"};
-     label.textContent="Atendimento assumido com sucesso.";renderAssignment(convs[index]||c);list();
-   }catch(err){label.textContent=err?.message||String(err);btn.disabled=false}
+  btn.disabled=true;label.textContent="Atribuindo atendimento...";
+  try{
+   const updated=await options.claimConversation(c.id);
+   const i=convs.findIndex(x=>x.id===c.id);
+   if(i>=0)convs[i]={...convs[i],...updated};
+   renderAssignment(convs[i]||c);list();label.textContent="Atendimento assumido.";
+  }catch(e){label.textContent=e.message||String(e);btn.disabled=false}
  };
 }
 async function open(id){if(id!==selected)clearFiles();selected=id;list();$('.msg-shell').classList.add('open');const c=convs.find(x=>x.id===id);if(!c)return;$('.msg-name').textContent=c.contact_label;$('.msg-channel').textContent=c.channel+' · '+(c.company||'');$('.msg-composer').hidden=!options.sendText&&!options.sendFiles&&!options.sendAudio;renderAssignment(c);await refresh()}
