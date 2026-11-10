@@ -50,7 +50,7 @@
     };
     formDialog.showModal();
   }
-  function chosenCompany() {return companies.find(c=>c.name===$('company').value)?.id || null}
+  function chosenCompany() {return companies.find(c=>companyById[c.id]===$('company').value)?.id || null}
   headerButton.onclick=()=>modalForm("Novo lead",[
     {name:"name",label:"Nome do lead",required:true},{name:"phone",label:"Telefone"},
     {name:"source",label:"Origem do contato",value:"Manual"},{name:"procedure_name",label:"Procedimento de interesse"},
@@ -108,11 +108,42 @@
     document.querySelectorAll('#kanban .lead').forEach(el=>el.onclick=()=>openCard(el.dataset.id));
   };
   inboxButton.onclick=()=>{tab="inbox";document.querySelectorAll('[data-tab]').forEach(el=>el.classList.toggle('active',el===inboxButton));$('title').textContent="Conversas unificadas";render()};
+  let messengerView=null;
   function renderInbox(){
-    const company_id=chosenCompany(), list=conversations.filter(c=>c.company_id===company_id);
-    sep.innerHTML='<div style="display:grid;grid-template-columns:minmax(160px,33%) 1fr;gap:12px"><div class="atende-thread"><b>Conversas</b>'+list.map(c=>'<button type="button" data-thread="'+escape(c.id)+'" style="display:block;width:100%;padding:12px;text-align:left;margin:8px 0;border:1px solid #dddde5;border-radius:9px;background:white">'+escape(c.contact_label||"Contato")+'<br><small>'+escape(c.channel)+'</small></button>').join('')+'</div><div class="atende-thread" id="atende-thread"><p>Selecione uma conversa.</p></div></div>';
-    sep.querySelectorAll('[data-thread]').forEach(el=>el.onclick=()=>showThread(el.dataset.thread));
-    if(activeConversation&&list.some(c=>c.id===activeConversation))void showThread(activeConversation);
+    const company_id=chosenCompany();
+    const list=conversations.filter(c=>c.company_id===company_id).map(c=>({
+      ...c,
+      company: companyById[c.company_id]||"",
+      channel: c.channel==="facebook" ? "Messenger" : c.channel,
+      contact_label:c.contact_label||"Contato"
+    }));
+    const messaging={
+      conversations:list,
+      loadMessages:async id=>{
+        const {data,error}=await db.from("messages").select("*")
+          .eq("conversation_id",id).eq("company_id",chosenCompany())
+          .order("sent_at",{ascending:true});
+        if(error)throw error;
+        return data||[];
+      },
+      sendText:async (conversation_id,text)=>{
+        const {data,error}=await db.functions.invoke("send-message",{body:{conversation_id,text}});
+        if(error)throw error;
+        if(data?.error)throw Error(data.error);
+      },
+      rewrite:async (text,mode)=>{
+        const {data,error}=await db.functions.invoke("rewrite-message",{body:{text,mode,company_id:chosenCompany()}});
+        if(error)throw error;
+        if(data?.error)throw Error(data.error);
+        return data?.text;
+      }
+    };
+    if(!window.ATENDE_CHAT){
+      $('atende-inbox').textContent="Interface de conversas indisponível.";
+      return;
+    }
+    if(!messengerView)messengerView=window.ATENDE_CHAT.mount($('atende-inbox'),messaging);
+    else messengerView.update(list);
   }
   async function showThread(id){
     activeConversation=id;
@@ -145,7 +176,7 @@
     const {data,error}=await db.from("companies").select("id,name").order("name");if(error){$('login-error').textContent=error.message;return}
     companies=data||[];companyById=Object.fromEntries(companies.map(x=>[x.id,/aloe/i.test(x.name)?"Aloe":/nagel/i.test(x.name)?"Nagel":x.name]));
     if(!companies.length){$('login-error').textContent="Esta conta não tem acesso a nenhuma clínica.";return}
-    $('company').innerHTML=companies.map(c=>'<option value="'+escape(c.name)+'">'+escape(c.name)+'</option>').join('');
+    $('company').innerHTML=companies.map(c=>'<option value="'+escape(companyById[c.id])+'">'+escape(c.name)+'</option>').join('');
     window.ATENDE_ATTRIBUTION?.connect(db,chosenCompany,companies);
     window.ATENDE_ATTRIBUTION?.setRefresher(loadData);
     $('company').onchange=()=>{activeConversation=null;loadData().catch(alertError)};
