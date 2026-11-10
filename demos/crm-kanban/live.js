@@ -257,6 +257,36 @@
     approvalsButton.hidden=!Object.values(memberRoles).includes("admin");
     $('company').innerHTML=companies.map(c=>'<option value="'+escape(companyById[c.id])+'">'+escape(c.name)+'</option>').join('');
     window.ATENDE_LEAD_WORKSPACE?.setBackend({
+      updateLead:async (lead,changes)=>{
+        const company_id=chosenCompany();
+        if(!company_id||companyById[company_id]!==lead.company)throw Error("Lead fora da clínica selecionada.");
+        const payload={
+          stage:stageReverse[changes.stage],
+          owner_name:changes.owner||null,
+          next_followup_at:changes.follow||null,
+          updated_at:new Date().toISOString()
+        };
+        if(!payload.stage)throw Error("Etapa do funil inválida.");
+        const {data,error}=await db.from("leads").update(payload)
+          .eq("company_id",company_id).eq("id",lead.id).select("id").single();
+        if(error)throw error;
+        if(!data)throw Error("Não foi possível confirmar a alteração do lead.");
+        lead.stage=changes.stage;lead.owner=changes.owner||"Não atribuído";lead.follow=changes.follow||"";
+        await loadData();
+      },
+      addNote:async (lead,content)=>{
+        const company_id=chosenCompany();
+        if(!company_id||companyById[company_id]!==lead.company)throw Error("Lead fora da clínica selecionada.");
+        const {data:{user},error:authError}=await db.auth.getUser();
+        if(authError||!user)throw Error("Sessão não autorizada.");
+        const {data,error}=await db.from("activities").insert({
+          company_id,lead_id:lead.id,kind:"note",
+          content,channel:"internal",author_id:user.id
+        }).select("id").single();
+        if(error)throw error;
+        if(!data)throw Error("Não foi possível confirmar o registro da nota.");
+        await loadData();
+      },
       getConversation:async lead=>{
         const id=chosenCompany();
         if(!id||companyById[id]!==lead.company)return null;
